@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Pecahan Super Interaktif</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 30px;
+            
+            /* TEMA KOMIK: Latar belakang titik-titik (Halftone) */
+            background-color: #f0f4f8;
+            background-image: radial-gradient(#adb5bd 2px, transparent 2px);
+            background-size: 24px 24px;
+            user-select: none;
+        }
+
+        /* Header Judul - Gaya Komik */
+        .app-header {
+            text-align: center;
+            margin-bottom: 25px;
+            background: #fff;
+            padding: 10px 30px 20px 30px;
+            border: 4px solid #000;
+            box-shadow: 8px 8px 0px #000;
+            transform: rotate(-1deg);
+        }
+
+        /* Gaya untuk GIF Header (Diperkecil & anti-potong) */
+        .header-gif {
+            width: 50px;  /* Ukuran gambar diperkecil */
+            height: 50px; /* Ukuran gambar diperkecil */
+            border-radius: 50%;
+            border: 4px solid #000;
+            padding: 15px; /* Padding dibesarkan proporsinya agar sudut kotak gambar aman di dalam lingkaran */
+            background-color: #fff;
+            object-fit: contain;
+            box-sizing: content-box; 
+            box-shadow: 4px 4px 0px #00acc1;
+            margin: 0 auto 15px auto;
+            display: block;
+        }
+
+        .app-header h1 {
+            color: #ffde00;
+            margin: 0;
+            font-size: 36px;
+            letter-spacing: 2px;
+            -webkit-text-stroke: 2px #000;
+            text-shadow: 4px 4px 0 #000;
+            text-transform: uppercase;
+        }
+        .app-header p {
+            color: #fff;
+            background-color: #000;
+            margin: 10px auto 0 auto;
+            font-size: 16px;
+            font-weight: bold;
+            display: inline-block;
+            padding: 4px 15px;
+            box-shadow: 4px 4px 0px #00acc1;
+            transform: rotate(2deg);
+        }
+
+        /* Panel Kontrol Input */
+        .input-panel {
+            background: #ffffff;
+            padding: 25px 35px;
+            border: 5px solid #000;
+            box-shadow: 10px 10px 0px #000;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .fraction-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .fraction-input input {
+            width: 50px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0px #000;
+            border-radius: 0;
+            padding: 5px;
+            outline: none;
+        }
+        .fraction-input input:focus {
+            background-color: #ffde00;
+        }
+        
+        /* Garis Pecahan (Per-peran) */
+        .fraction-input hr {
+            width: 80px; 
+            height: 6px; 
+            background-color: #000; 
+            border: none; 
+            margin: 10px 0; 
+            border-radius: 3px;
+        }
+
+        /* Tombol Operasi Kiri Kanan */
+        .operation-toggle {
+            display: flex;
+            gap: 0;
+            background: #fff;
+            border: 4px solid #000;
+            box-shadow: 5px 5px 0px #000;
+        }
+        .op-btn {
+            width: 50px;
+            height: 50px;
+            font-size: 28px;
+            font-weight: bold;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #eee;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        #btn-op-add { border-right: 4px solid #000; }
+        .op-btn:hover { background-color: #ccc; }
+        .op-btn.active {
+            background-color: #ffde00;
+            color: #000;
+        }
+
+        /* Tombol Aksi */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-left: 10px;
+            border-left: 4px dotted #000;
+            padding-left: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: 3px solid #000;
+            background-color: #00acc1;
+            color: #000;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 5px 5px 0px #000;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        button:active {
+            transform: translate(5px, 5px);
+            box-shadow: 0px 0px 0px #000;
+        }
+        
+        .btn-random { background-color: #ff9100; color: #000;}
+        .btn-play { background-color: #00e676; color: #000; }
+        .btn-pause { background-color: #ffea00; color: #000;}
+        .btn-reset { background-color: #ff1744; color: #fff; }
+
+        /* Area Visual */
+        .visual-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            min-height: 180px;
+            background: #fff;
+            padding: 20px;
+            border: 4px solid #000;
+            box-shadow: 8px 8px 0px #000;
+        }
+        .equation-side {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .box {
+            width: 160px;
+            height: 160px;
+            border: 4px solid #000;
+            display: grid;
+            box-sizing: border-box;
+            background-color: white;
+            box-shadow: 6px 6px 0px #000;
+        }
+        .operator { font-size: 40px; font-weight: bold; width: 60px; text-align: center; color: #000;}
+        .equals { margin: 0 20px; font-size: 40px; font-weight: bold; color: #000;}
+
+        /* Palet Warna */
+        .cell { border: 2px solid #000; box-sizing: border-box; transition: background-color 0.2s; }
+        .blue { background-color: #00acc1; }
+        .pink { background-color: #ffd54f; }
+        .white { background-color: #ffffff; }
+        .dim-blue { background-color: rgba(0, 172, 193, 0.3); }
+        .dim-pink { background-color: rgba(255, 213, 79, 0.3); }
+        .overlap { background: repeating-linear-gradient(45deg, #ffd54f, #ffd54f 10px, #00acc1 10px, #00acc1 20px); }
+        .mix { background-color: #9c27b0; }
+
+        /* Garis Animasi */
+        #anim-lines-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+        }
+        .anim-line { position: absolute; background-color: #000; z-index: 10; }
+
+        /* Narasi & Matematika */
+        .narration-box {
+            background: #fff; 
+            color: #000; 
+            padding: 15px 25px; 
+            border: 4px solid #000;
+            box-shadow: 8px 8px 0px #000;
+            margin-bottom: 25px; 
+            font-size: 20px; 
+            font-weight: bold;
+            width: 80%; 
+            max-width: 700px; 
+            text-align: center; 
+            min-height: 50px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            line-height: 1.4;
+            position: relative;
+        }
+        .narration-box::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50px;
+            border-width: 15px;
+            border-style: solid;
+            border-color: #000 transparent transparent #000;
+        }
+        
+        .math-container {
+            display: flex; align-items: center; justify-content: center; flex-wrap: wrap; row-gap: 15px; font-size: 28px; margin-bottom: 30px; min-height: 60px; max-width: 95%;
+            background: #fff; padding: 10px 20px; border: 4px solid #000; box-shadow: 6px 6px 0px #000;
+        }
+        .frac { display: inline-flex; flex-direction: column; align-items: center; margin: 0 5px; }
+        .frac span:first-child { border-bottom: 3px solid #000; padding: 2px 5px; white-space: nowrap; }
+        .frac span:last-child { padding: 2px 5px; white-space: nowrap; }
+        
+        .text-blue { color: #006064; font-weight: 900;} 
+        .text-pink { color: #827717; font-weight: 900;} 
+        .text-black { color: #000; font-weight: 900;}
+        .text-success { color: #00c853; font-weight: 900; }
+        .multiplier { font-size: 16px; color: #555; font-weight: bold;}
+
+        /* Kontrol AutoPlay & Slider */
+        .playback-controls { display: flex; gap: 15px; margin-bottom: 15px; }
+        .slider-container { 
+            display: flex; align-items: center; gap: 15px; width: 80%; max-width: 600px; 
+            background: #fff; padding: 10px 20px; border: 4px solid #000; box-shadow: 6px 6px 0px #000;
+            font-weight: bold; font-size: 18px;
+        }
+        input[type=range] { flex-grow: 1; height: 15px; background: #000; border-radius: 0; outline: none; -webkit-appearance: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; border-radius: 0; background: #ffde00; border: 4px solid #000; cursor: pointer; transition: transform 0.1s;}
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+    </style>
+</head>
+<body>
+
+    <div class="app-header">
+        <img src="https://raw.githubusercontent.com/dosen-uinsi/PENJUMLAHAN-PENGURANGAN-PECAHAN/refs/heads/main/PLUS%20MINUS.gif" alt="Animasi Plus Minus" class="header-gif">
+        <h1>PENJUMLAHAN & PENGURANGAN PECAHAN</h1>
+        <p>By Mathnology</p>
+    </div>
+
+    <div class="input-panel">
+        <div class="fraction-input">
+            <input type="number" id="n1" value="3" min="1" max="10">
+            <hr>
+            <input type="number" id="d1" value="4" min="2" max="10">
+        </div>
+        
+        <div class="operation-toggle">
+            <button id="btn-op-add" class="op-btn">+</button>
+            <button id="btn-op-sub" class="op-btn active">−</button>
+        </div>
+
+        <div class="fraction-input">
+            <input type="number" id="n2" value="1" min="1" max="10">
+            <hr>
+            <input type="number" id="d2" value="6" min="2" max="10">
+        </div>
+        
+        <div class="action-buttons">
+            <button id="btn-generate">Buat Soal</button>
+            <button id="btn-random" class="btn-random">🎲 Soal Otomatis</button>
+        </div>
+    </div>
+
+    <div class="narration-box" id="narration-text">Tekan "Buat Soal" lalu geser slider atau tekan Play.</div>
+
+    <div class="visual-container">
+        <div class="equation-side" id="eq-side">
+            <div id="box1" class="box"></div>
+            <div class="operator" id="op-visual">−</div>
+            <div id="box2" class="box"></div>
+            <div id="anim-lines-container"></div>
+        </div>
+        <div class="equals">=</div>
+        <div id="box3" class="box"></div>
+    </div>
+
+    <div class="math-container" id="math-text"></div>
+
+    <div class="playback-controls">
+        <button id="btn-play" class="btn-play">▶ PLAY</button>
+        <button id="btn-pause" class="btn-pause">⏸ PAUSE</button>
+        <button id="btn-reset" class="btn-reset">🔄 RESET</button>
+    </div>
+    <div class="slider-container">
+        <span>GESER:</span>
+        <input type="range" id="anim-slider" min="0" max="100" value="0">
+    </div>
+
+    <script>
+        let currentOp = 'sub'; 
+        let state = { n1: 3, d1: 4, n2: 1, d2: 6, op: 'sub', totalCells: 24, blueTotal: 18, pinkTotal: 4 };
+        let playInterval;
+
+        const slider = document.getElementById('anim-slider');
+        const box1 = document.getElementById('box1');
+        const box2 = document.getElementById('box2');
+        const box3 = document.getElementById('box3');
+        const mathText = document.getElementById('math-text');
+        const linesContainer = document.getElementById('anim-lines-container');
+        const narrationText = document.getElementById('narration-text');
+        const opVisual = document.getElementById('op-visual');
+
+        const btnAdd = document.getElementById('btn-op-add');
+        const btnSub = document.getElementById('btn-op-sub');
+
+        btnAdd.addEventListener('click', () => {
+            currentOp = 'add';
+            btnAdd.classList.add('active');
+            btnSub.classList.remove('active');
+        });
+
+        btnSub.addEventListener('click', () => {
+            currentOp = 'sub';
+            btnSub.classList.add('active');
+            btnAdd.classList.remove('active');
+        });
+
+        function getGCD(a, b) {
+            return b === 0 ? a : getGCD(b, a % b);
+        }
+
+        document.getElementById('btn-random').addEventListener('click', () => {
+            let n1, d1, n2, d2;
+            let isValid = false;
+
+            while (!isValid) {
+                d1 = Math.floor(Math.random() * 4) + 2; 
+                n1 = Math.floor(Math.random() * (d1 - 1)) + 1; 
+
+                d2 = Math.floor(Math.random() * 4) + 2;
+                n2 = Math.floor(Math.random() * (d2 - 1)) + 1;
+
+                if (currentOp === 'sub') {
+                    if ((n1 * d2) >= (n2 * d1)) {
+                        isValid = true;
+                    }
+                } else if (currentOp === 'add') {
+                    if ((n1 * d2) + (n2 * d1) <= (d1 * d2)) {
+                        isValid = true;
+                    }
+                }
+            }
+
+            document.getElementById('n1').value = n1;
+            document.getElementById('d1').value = d1;
+            document.getElementById('n2').value = n2;
+            document.getElementById('d2').value = d2;
+
+            document.getElementById('btn-generate').click();
+        });
+
+        document.getElementById('btn-generate').addEventListener('click', () => {
+            const n1 = parseInt(document.getElementById('n1').value);
+            const d1 = parseInt(document.getElementById('d1').value);
+            const n2 = parseInt(document.getElementById('n2').value);
+            const d2 = parseInt(document.getElementById('d2').value);
+
+            if(n1 >= d1 || n2 >= d2) {
+                alert("Mohon masukkan pecahan biasa (pembilang harus lebih kecil dari penyebut).");
+                return;
+            }
+            if(currentOp === 'sub' && (n1 * d2 < n2 * d1)) {
+                alert("Untuk pengurangan, pecahan pertama tidak boleh lebih kecil dari pecahan kedua agar hasilnya tidak negatif!");
+                return;
+            }
+            if(currentOp === 'add' && ((n1 * d2) + (n2 * d1) > (d1 * d2))) {
+                alert("Untuk penjumlahan ini, total dari kedua pecahan melebihi 1. Aplikasi ini mensyaratkan hasil maksimal 1.");
+                return;
+            }
+
+            state = { n1, d1, n2, d2, op: currentOp, totalCells: d1 * d2, blueTotal: n1 * d2, pinkTotal: n2 * d1 };
+            opVisual.innerText = currentOp === 'add' ? '+' : '−';
+            resetAnimation();
+        });
+
+        function drawGrid(boxElement, cols, rows, colorsArr) {
+            boxElement.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            boxElement.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+            boxElement.innerHTML = '';
+            for (let i = 0; i < cols * rows; i++) {
+                const cell = document.createElement('div');
+                cell.className = `cell ${colorsArr[i] || 'white'}`;
+                boxElement.appendChild(cell);
+            }
+        }
+
+        function updateState() {
+            const val = parseInt(slider.value);
+            linesContainer.innerHTML = '';
+            const s = state;
+            const operatorStr = s.op === 'add' ? '+' : '−';
+
+            let finalVal = s.op === 'sub' ? (s.blueTotal - s.pinkTotal) : (s.blueTotal + s.pinkTotal);
+            let gcd = Math.abs(getGCD(finalVal, s.totalCells));
+            let isSimplifiable = (gcd > 1 && finalVal !== 0);
+            let finalSimpNum = finalVal / gcd;
+            let finalSimpDen = s.totalCells / gcd;
+
+            const f1 = `<div class="frac text-blue"><span>${s.n1}</span><span>${s.d1}</span></div>`;
+            const f2 = `<div class="frac text-pink"><span>${s.n2}</span><span>${s.d2}</span></div>`;
+            const opHtml = `<div class="operator text-black">${operatorStr}</div>`;
+            const eqHtml = `<div class="operator text-black">=</div>`;
+
+            const f1_mul = `<div class="frac text-blue"><span>${s.n1} <span class="multiplier">&times; ${s.d2}</span></span><span>${s.d1} <span class="multiplier">&times; ${s.d2}</span></span></div>`;
+            const f2_mul = `<div class="frac text-pink"><span>${s.n2} <span class="multiplier">&times; ${s.d1}</span></span><span>${s.d2} <span class="multiplier">&times; ${s.d1}</span></span></div>`;
+
+            const f1_new = `<div class="frac text-blue"><span>${s.blueTotal}</span><span>${s.totalCells}</span></div>`;
+            const f2_new = `<div class="frac text-pink"><span>${s.pinkTotal}</span><span>${s.totalCells}</span></div>`;
+
+            const calcStepFrag = `<div class="frac text-black"><span><span class="text-blue">${s.blueTotal}</span> ${operatorStr} <span class="text-pink">${s.pinkTotal}</span></span><span>${s.totalCells}</span></div>`;
+            
+            const resultFrag = `<div class="frac text-black" ${!isSimplifiable ? 'style="font-weight:bold;"' : ''}><span>${finalVal}</span><span>${s.totalCells}</span></div>`;
+
+            const simplifyProcessFrag = `<div class="frac text-success"><span>${finalVal} <span class="multiplier">&divide; ${gcd}</span></span><span>${s.totalCells} <span class="multiplier">&divide; ${gcd}</span></span></div>`;
+            const finalSimpFrag = `<div class="frac text-success" style="font-weight:bold; font-size:32px;"><span>${finalSimpNum}</span><span>${finalSimpDen}</span></div>`;
+
+            const step1 = f1 + opHtml + f2;
+            const step2 = eqHtml + f1_mul + opHtml + f2_mul;
+            const step3 = eqHtml + f1_new + opHtml + f2_new;
+            const step4 = eqHtml + calcStepFrag;
+            const step5 = eqHtml + resultFrag;
+            const step6 = eqHtml + simplifyProcessFrag;
+            const step7 = eqHtml + finalSimpFrag;
+
+            if (val < 20) {
+                let b1 = Array(s.d1).fill('white'); for(let i=0; i<s.n1; i++) b1[i] = 'blue';
+                let b2 = Array(s.d2).fill('white'); for(let i=s.d2-s.n2; i<s.d2; i++) b2[i] = 'pink';
+                drawGrid(box1, s.d1, 1, b1); drawGrid(box2, 1, s.d2, b2); drawGrid(box3, 1, 1, ['white']);
+                mathText.innerHTML = step1;
+                narrationText.innerText = `Langkah 1: Kita memiliki pecahan ${s.n1}/${s.d1} dan ${s.n2}/${s.d2}. Perhatikan bahwa ukuran potongannya (penyebutnya) berbeda.`;
+            }
+            else if (val >= 20 && val < 40) {
+                let b1 = Array(s.d1).fill('white'); for(let i=0; i<s.n1; i++) b1[i] = 'blue';
+                let b2 = Array(s.d2).fill('white'); for(let i=s.d2-s.n2; i<s.d2; i++) b2[i] = 'pink';
+                drawGrid(box1, s.d1, 1, b1); drawGrid(box2, 1, s.d2, b2); drawGrid(box3, 1, 1, ['white']);
+                
+                const p = (val - 20) / 19;
+                const eqWidth = document.getElementById('eq-side').offsetWidth;
+                const boxWidth = 160;
+
+                for (let i = 1; i < s.d2; i++) {
+                    let hLine = document.createElement('div'); hLine.className = 'anim-line';
+                    hLine.style.height = '4px'; hLine.style.top = `calc(${(i / s.d2) * 100}% - 2px)`;
+                    hLine.style.right = '0'; hLine.style.width = `${boxWidth + (p * (eqWidth - boxWidth))}px`;
+                    linesContainer.appendChild(hLine);
+                }
+                for (let i = 1; i < s.d1; i++) {
+                    let vLine = document.createElement('div'); vLine.className = 'anim-line';
+                    vLine.style.width = '4px'; vLine.style.left = `calc(${(i / s.d1) * boxWidth}px - 2px)`;
+                    vLine.style.top = '0'; vLine.style.height = '100%';
+                    vLine.style.transform = `translateX(${p * (eqWidth - boxWidth)}px)`;
+                    linesContainer.appendChild(vLine);
+                }
+
+                mathText.innerHTML = step1 + step2;
+                narrationText.innerText = `Langkah 2: Menyamakan penyebut. Kita kalikan silang agar kedua kotak memiliki jumlah potongan yang sama (${s.d1} x ${s.d2} = ${s.totalCells} potong).`;
+            }
+            else if (val >= 40 && val < 60) {
+                let b1 = Array(s.totalCells).fill('white');
+                for(let row=0; row<s.d2; row++) { for(let col=0; col<s.n1; col++) { b1[row*s.d1 + col] = 'blue'; } }
+                let b2 = Array(s.totalCells).fill('white');
+                for(let row=s.d2-s.n2; row<s.d2; row++) { for(let col=0; col<s.d1; col++) { b2[row*s.d1 + col] = 'pink'; } }
+                drawGrid(box1, s.d1, s.d2, b1); drawGrid(box2, s.d1, s.d2, b2); drawGrid(box3, s.d1, s.d2, Array(s.totalCells).fill('white'));
+
+                mathText.innerHTML = step1 + step2 + step3;
+                narrationText.innerText = `Langkah 3: Pecahan senilai didapatkan! Sekarang soalnya menjadi ${s.blueTotal}/${s.totalCells} ${operatorStr} ${s.pinkTotal}/${s.totalCells}.`;
+            }
+            else if (val >= 60 && val < 85) {
+                let phaseProgress = (val - 60) / 24; 
+
+                let totalBlueTarget = s.blueTotal;
+                let totalPinkTarget = (s.op === 'sub') ? s.pinkTotal : 0;
+
+                let blueMovedCount = 0;
+                let pinkMovedCount = 0;
+
+                if (s.op === 'sub') {
+                    let subFaseSplit = 0.6; 
+                    if (phaseProgress <= subFaseSplit) {
+                        let blueSubProgress = phaseProgress / subFaseSplit; 
+                        blueMovedCount = Math.floor(blueSubProgress * totalBlueTarget);
+                        pinkMovedCount = 0; 
+                    } else {
+                        blueMovedCount = totalBlueTarget; 
+                        let pinkSubProgress = (phaseProgress - subFaseSplit) / (1.0 - subFaseSplit); 
+                        pinkMovedCount = Math.floor(pinkSubProgress * totalPinkTarget);
+                    }
+                } else if (s.op === 'add') {
+                    if(phaseProgress < 0.5) { blueMovedCount = Math.floor((phaseProgress/0.5) * s.blueTotal); pinkMovedCount = 0; }
+                    else { blueMovedCount = s.blueTotal; pinkMovedCount = Math.floor(((phaseProgress-0.5)/0.5) * s.pinkTotal); }
+                }
+
+                let b1 = Array(s.totalCells).fill('white');
+                let blueIdx = 0;
+                for(let row=0; row<s.d2; row++) { for(let col=0; col<s.n1; col++) { b1[row*s.d1 + col] = (blueIdx < blueMovedCount) ? 'dim-blue' : 'blue'; blueIdx++; } }
+                
+                let b2 = Array(s.totalCells).fill('white');
+                let pinkIdx = 0;
+                for(let row=s.d2-s.n2; row<s.d2; row++) { for(let col=0; col<s.d1; col++) { b2[row*s.d1 + col] = (pinkIdx < pinkMovedCount) ? 'dim-pink' : 'pink'; pinkIdx++; } }
+
+                let b3 = Array(s.totalCells).fill('white');
+                if (s.op === 'sub') {
+                    for(let i=0; i<blueMovedCount; i++) b3[i] = 'blue'; 
+                    for(let i=0; i<pinkMovedCount; i++) {
+                        let targetIdx = blueMovedCount - 1 - i; 
+                        if(targetIdx >= 0) b3[targetIdx] = 'overlap';
+                    }
+                } else {
+                    for(let i=0; i<blueMovedCount; i++) b3[i] = 'blue';
+                    for(let i=0; i<pinkMovedCount; i++) b3[blueMovedCount + i] = 'pink';
+                }
+
+                drawGrid(box1, s.d1, s.d2, b1); drawGrid(box2, s.d1, s.d2, b2); drawGrid(box3, s.d1, s.d2, b3);
+
+                mathText.innerHTML = step1 + step2 + step3 + step4;
+                narrationText.innerText = s.op === 'sub' ? 
+                    (phaseProgress <= 0.6 ? "Langkah 4a: Operasi Pembilang. Blok teal sedang berpindah sepenuhnya ke kotak hasil." : "Langkah 4b: Operasi Pembilang. Sekarang blok mustard berpindah untuk membatalkan blok teal.") :
+                    (phaseProgress < 0.5 ? "Langkah 4a: Operasi Pembilang. Blok teal sedang berpindah ke kotak hasil." : "Langkah 4b: Operasi Pembilang. Blok mustard sekarang digabungkan bersama blok teal.");
+            }
+            else if (val >= 85 && val < 95) {
+                let b1 = Array(s.totalCells).fill('white');
+                for(let row=0; row<s.d2; row++) { for(let col=0; col<s.n1; col++) { b1[row*s.d1 + col] = 'dim-blue'; } }
+                let b2 = Array(s.totalCells).fill('white');
+                for(let row=s.d2-s.n2; row<s.d2; row++) { for(let col=0; col<s.d1; col++) { b2[row*s.d1 + col] = 'dim-pink'; } }
+
+                let b3 = Array(s.totalCells).fill('white');
+                if (s.op === 'sub') { for(let i=0; i<finalVal; i++) b3[i] = 'blue'; } 
+                else { for(let i=0; i<finalVal; i++) b3[i] = 'mix'; }
+
+                drawGrid(box1, s.d1, s.d2, b1); drawGrid(box2, s.d1, s.d2, b2); drawGrid(box3, s.d1, s.d2, b3);
+
+                mathText.innerHTML = step1 + step2 + step3 + step4 + step5;
+                
+                if (isSimplifiable) {
+                    narrationText.innerText = `Langkah 5: Kita mendapat ${finalVal}/${s.totalCells}. Angka ini masih bisa disederhanakan! Geser sedikit lagi...`;
+                } else {
+                    narrationText.innerText = `Selesai! Hasil akhir adalah ${finalVal}/${s.totalCells}. Pecahan ini sudah dalam bentuk paling sederhana.`;
+                }
+            }
+            else if (val >= 95) {
+                let b1 = Array(s.totalCells).fill('white');
+                for(let row=0; row<s.d2; row++) { for(let col=0; col<s.n1; col++) { b1[row*s.d1 + col] = 'dim-blue'; } }
+                let b2 = Array(s.totalCells).fill('white');
+                for(let row=s.d2-s.n2; row<s.d2; row++) { for(let col=0; col<s.d1; col++) { b2[row*s.d1 + col] = 'dim-pink'; } }
+
+                let b3 = Array(s.totalCells).fill('white');
+                if (s.op === 'sub') { for(let i=0; i<finalVal; i++) b3[i] = 'blue'; } 
+                else { for(let i=0; i<finalVal; i++) b3[i] = 'mix'; }
+
+                drawGrid(box1, s.d1, s.d2, b1); 
+                drawGrid(box2, s.d1, s.d2, b2); 
+                drawGrid(box3, s.d1, s.d2, b3);
+
+                if (isSimplifiable) {
+                    mathText.innerHTML = step1 + step2 + step3 + step4 + step5 + step6 + step7;
+                    narrationText.innerText = `Selesai! Membagi pembilang dan penyebut dengan FPB (${gcd}). Hasil paling sederhana adalah ${finalSimpNum}/${finalSimpDen}.`;
+                } else {
+                    mathText.innerHTML = step1 + step2 + step3 + step4 + step5;
+                    narrationText.innerText = `Selesai! Hasil akhir adalah ${finalVal}/${s.totalCells}. Pecahan ini sudah dalam bentuk paling sederhana.`;
+                }
+            }
+        }
+
+        slider.addEventListener('input', () => { pauseAnimation(); updateState(); });
+
+        function playAnimation() {
+            pauseAnimation();
+            playInterval = setInterval(() => {
+                let val = parseInt(slider.value);
+                if (val < 100) { slider.value = val + 1; updateState(); } 
+                else { pauseAnimation(); }
+            }, 60); 
+        }
+
+        function pauseAnimation() { clearInterval(playInterval); }
+        function resetAnimation() { pauseAnimation(); slider.value = 0; updateState(); }
+
+        document.getElementById('btn-play').addEventListener('click', playAnimation);
+        document.getElementById('btn-pause').addEventListener('click', pauseAnimation);
+        document.getElementById('btn-reset').addEventListener('click', resetAnimation);
+
+        updateState();
+    </script>
+</body>
+</html>
